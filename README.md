@@ -4,7 +4,7 @@ This is a controller/monitor system designed for linux with hard coded threshold
 The reactions can be done based on crossing thresholds and then not done again until "healed" and a second event crosses the threshold, etc.
 
 The reactions are coded in `reactions.rs`, by default mostly they are collecting the kernel message buffer and running other commands like ps and df, but also doing some disk space cleaning and some other example.
-The output is simply going to STDOUT, which can be used adhoc and interactively on the CLI or daemonized if run within a container or systemd, which will then jave the STDOUT data be collected within the logging system.
+The output is simply going to STDOUT, which can be used adhoc and interactively on the CLI or daemonized if run within a container or systemd, which will then have the STDOUT data be collected within the logging system.
 The logging may then be further used by other systems for further event correlation and data analysis.
 
 <b>Adjust the reactions to what is needed before running on a real system!</b>
@@ -171,7 +171,7 @@ react to use with score below -9000 to send a reminder alert to admins and take 
 
 ```
 
-We can create low thresholds that only occur if a previous threshold was crossed and previous action taken, and an amount of time passed as the negative counters are only -1 per sample iteraction.
+We can create low thresholds that only occur if a previous threshold was crossed and previous action taken, and an amount of time passed as the negative counters are only -1 per sample iteration.
 So a score threshold of -200000 would take over 4 days to reach, unless of course additional health penalizations are included per round on the same metric. Because we can go down to -2000000000,
 we could have 32 years continuous runtime of negative metrics before reaching the end floor, or longer if the iteration sleep value is increased. Of course the floor could be lowered by using f64s or BigInt values, but
 we are using i32 to reduce RAM and because we don't need scores below -2 billion in this design. We could reduce resource utilization by not putting the i32s in a vector at all perhaps, but the vector data structure is useful, too.
