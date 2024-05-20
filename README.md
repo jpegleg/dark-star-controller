@@ -13,11 +13,14 @@ The thresholds are also hard coded intentionally (to reduce tampering potential 
 <b>Adjust the thresholds to what is needed on a case-by-case basis! This means tuning the binary to fit the intended system use-case!</b>
 
 Default thresholds:
+```
 90% disk usage in /
 90% disk usage in /var
 1000 ESTABLISHED TCP connections
 2000 running system processes/tasks
 load average over # cores (this one isn't hard coded and the threshold is assigned to the number of CPUs/vCPUs on the system, so 4 cores will make a load average of 4 the threshold)
+50% memory usage
+```
 
 ## Resource utilization
 
