@@ -43,7 +43,7 @@ $ dstrc -d
 [2024-05-20 02:35:35.529249340 UTC DEBUG] - "dragon" [100, 100, 100, 100, 100] -> disk: "68.00961561035817" net: "5" proc: "850" load: "1.3657227" mem: "0.20742951488088143"
 [2024-05-20 02:35:37.617374858 UTC DEBUG] - "dragon" [100, 100, 100, 100, 100] -> disk: "68.00961561035817" net: "5" proc: "849" load: "1.3364258" mem: "0.20747572536323775"
 ^C
-
+$ 
 ```
 
 In this way, we also have preconfigured delays before reaction if we lower the threshold values. It takes interations as each negative metric results in -1 health for that metric position.
@@ -69,12 +69,91 @@ In '-d' mode, we print both healthy DEBUG values and WARN negative samples.
 
 If any other arguments are used, then only the start and reaction values will print. The reactions can of course be set to not print, and on a per reaction basis, too.
 
+The reactions take place regardless of whether '-w' or '-d' or other value is passed. The reactions can use bayesian inference or MDP-like algorithms because of the markers and thresholds. We can compute a new probability of an action being the right one across same metric or all metric data, and act specifically based on those calculations, too. This secondary or more developed logic is not included in the template, but the template is set up to enable that. 
+
+The main logic section can be perhaps understood by examining this function, which takes probe data (string output) and converts it to an `f64` to compare it to the threshold value.
+The result is an unary float that is later checked to ultimately tip the health score, either -1 or +2000000100 back to 100.
+
+```
+fn compare_strings(str1: &str, str2: &f64) -> f64 {
+    let mbo = { *str2 };
+    if let (Ok(num1), num2) = (str1.parse::<f64>(), mbo) {
+        if num1 == num2 {
+            0.0
+        } else if num1 > num2 {
+            1.0
+        } else {
+            2.0
+        }
+    } else {
+        255.0
+    }
+}
+
+```
+
+Then further logic acts when the score dips below a threshold and sets its marker:
+
+```
+        if sim[3] < 99 && marker4 < 1 {
+
+            let netcont = thread::spawn(|| {
+                reactions::reportnet1();
+            });
+
+            netcont.join().unwrap();
+            marker4 = 1;
+        }
+```
+
+Additional thresholds and marker logic is programmed (by the person doing the implentation) to decide on the actions and thresholds, develop the flows and actions or other algorithms within the looping or ahead of the looping.
+
+An example logic flow could be as follows if we wanted to make version entirely focused on disk metrics and disk space management. Of course we could also just increase the vector size and add rather than replce metrics, too.
+
+(replace all health scores with disk partition (slice) metrics for use %, as well as inode count, count of open files, bits written, and bits read, for example)
+
+react to 80% slice use with gathering open files on that slice and files over 200MB in size, set marker to not trigger again until after healthy
+react to 85% slice use with sending slice data to admins, set marker to not trigger again until after healthy
+react to 90% slice use with preconfigured log rotation actions, set marker to not trigger again until after healthy
+react to use with score below -2000 to send an escalated alert to admins, set marker to not trigger again until after healthy
+react to use with score below -9000 to send a reminder alert to admins and take more extreme measures to attempt to free up disk space
+
+We can create low thresholds that only occur if a previous threshold was crossed and previous action taken, and an amount of time passed as the negative counters are only -1 per sample iteraction.
+So a score threshold of -200000 would take over 4 days to reach, unless of course additional health penalizations are included per round on the same metric. Because we can go down to -2000000000,
+we could have 32 years continuous runtime of negative metrics before reaching the end floor, or longer if the iteration sleep value is increased. Of course the floor could be lowered by using f64s or BigInt values, but
+we are using i32 to reduce RAM and because we don't need scores below -2 billion in this design. We could reduce resource utilization by not putting the i32s in a vector at all perhaps, but the vector data structure is useful, too.
+
+## Notes about changing the sleep value
+
+The sleep value is set to 1999 milliseconds by default, just under 2 seconds. Increasing it can lighten the load but also provides greater window to miss important samples. The sleep can be safey increased to 30 seconds, and even upwards to 59 seconds. It isn't as strong of a load average metric if we sleep for 60 seconds or more, but it could be done, however slows the rate of reaction below what is intended. Shortening the sleep value to less than 1999ms is fine, but does increase the rate of action and the load on the system. Some systems might have enough spare capacity and desire to run 500ms sleep, for example.
+
+
+## Example systemd daemonization
+
+Here is a simple systemd unit file for dark-star-controller (dstrc). The binary is deployed to /usr/local/bin/dstrc and set as executable.
+This unit file then can be placed in `/etc/systemd/system/dstrc.service`, and then the `sudo systemctl daemon-reload && sudo systemctl enable dstrc && sudo systemctl start dstrc`.
+
+```
+[Unit]
+Description=dstrc
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=nice /usr/local/bin/dstrc -w
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
+```
+
+The print messages will by default go to the systemd journal files, such as can be accessed with `journalctl -xe`.
+
 
 ## Resource utilization
 
 This program isn't exactly light weight as it samples the system every 1999ms, constantly recalculating and rechecking values. Continued reduction in resource consumption may be made.
 Interestingly the disk calculation is less efficient here than it would be to simply Command call df, so that is a target for optimziation.
-
 
 
 
