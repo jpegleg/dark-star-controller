@@ -160,6 +160,7 @@ Additional thresholds and marker logic is programmed (by the person doing the im
 
 An example logic flow could be as follows if we wanted to make version entirely focused on disk metrics and disk space management. Of course we could also just increase the vector size and add rather than replce metrics, too.
 
+```
 (replace all health scores with disk partition (slice) metrics for use %, as well as inode count, count of open files, bits written, and bits read, for example)
 
 react to 80% slice use with gathering open files on that slice and files over 200MB in size, set marker to not trigger again until after healthy
@@ -167,6 +168,8 @@ react to 85% slice use with sending slice data to admins, set marker to not trig
 react to 90% slice use with preconfigured log rotation actions, set marker to not trigger again until after healthy
 react to use with score below -2000 to send an escalated alert to admins, set marker to not trigger again until after healthy
 react to use with score below -9000 to send a reminder alert to admins and take more extreme measures to attempt to free up disk space
+
+```
 
 We can create low thresholds that only occur if a previous threshold was crossed and previous action taken, and an amount of time passed as the negative counters are only -1 per sample iteraction.
 So a score threshold of -200000 would take over 4 days to reach, unless of course additional health penalizations are included per round on the same metric. Because we can go down to -2000000000,
