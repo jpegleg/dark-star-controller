@@ -46,7 +46,6 @@ $ dstrc -d
 $ 
 ```
 
-In this way, we also have preconfigured delays before reaction if we lower the threshold values. It takes interations as each negative metric results in -1 health for that metric position.
 
 
 This next example is WARN logging (-w mode), and in a daemonized dstrc:
@@ -92,19 +91,70 @@ fn compare_strings(str1: &str, str2: &f64) -> f64 {
 
 ```
 
+In this way, we also have preconfigured delays before reaction if we lower the threshold values. It takes interations as each negative metric results in -1 health for that metric position.
+
+```
+        let disk = dskroot(); // collect the probe sample
+        let de = compare_strings(&disk, &90.0); // compare sample to coded threshold using the function "compare_strings"
+
+        if de == 1.0 {
+            sim[2] -= 1; // drop the score by 1 if comparison result is 1.0
+            let newval = lowend(sim[2]); // keep max depth from going out of i32 range, min of -2 billion
+            sim[2] = newval
+
+        }
+
+        if de == 0.0 {
+            sim[2] -= 1; // drop the score by 1 if the comparison result is 0.0
+            let newval = lowend(sim[2]);
+            sim[2] = newval
+
+        }
+
+        if de == 2.0 {  // heal to 100 if the result is 2.0
+            if sim[2] < 100 {
+                sim[2] += 2000000100
+            }
+            if sim[2] > 100 {
+                sim[2] = 100
+            }
+
+        }
+
+```
+
 Then further logic acts when the score dips below a threshold and sets its marker:
 
 ```
-        if sim[3] < 99 && marker4 < 1 {
 
-            let netcont = thread::spawn(|| {
-                reactions::reportnet1();
+        if sim[2] < 0 && marker1 < 1 {
+
+            let dskcont = thread::spawn(|| {
+                reactions::diskcleaner1();
             });
 
-            netcont.join().unwrap();
-            marker4 = 1;
+            dskcont.join().unwrap();
+            marker1 = 1;
         }
 ```
+
+And the marker is reset if the score reaches 100 again.
+
+```
+        if sim[2] == 100 {
+            marker1 = 0;
+        } else if marker1 == 2 {
+             _ = 0;
+        } else if mode == "-w" {
+            let nim: DateTime<Utc> = Utc::now();
+            println!("[{} WARN] - {:?} {:?} -> disk over threshold: {:?}", nim, &host, &sim, &disk);
+        } else if mode == "-d" {
+            let nim: DateTime<Utc> = Utc::now();
+            println!("[{} WARN] - {:?} {:?} -> disk over threshold: / {:?} /var {:?}", nim, &host, &sim, &disk, &diskt);
+        }
+```
+
+The default template has 1 marker per metric, and 1 threshold per metric for reaction, with metrics below 0 also triggering "prolonged negative state" events, that have a WARN print, if -w or -d are used.
 
 Additional thresholds and marker logic is programmed (by the person doing the implentation) to decide on the actions and thresholds, develop the flows and actions or other algorithms within the looping or ahead of the looping.
 
