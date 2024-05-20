@@ -25,7 +25,7 @@ load average over # cores (this one isn't hard coded and the threshold is assign
 ## Event "cascading" - no need to repeat actions
 
 As samples are collected (using multiple collection mechanisms in rust) and the results impact the "health" value for that metric. All of the health metrics are stored
-in a vector of i32s. The i32s used for health have a floor of -2 billion and a ceiling of 100. Values above 100 will instead be 100, and values below 2 billion will be 2 billion.
+in a vector of i32s. The i32s used for health have a floor of -2 billion and a ceiling of 100. Values above 100 will instead be 100, and values below -2 billion will be -2 billion.
 
 Thresholds of health per score (or with combined scores) can trigger reactions. If a reaction uses a _marker_, then the marker prevents the same action from being taken until
 that health metric is restored to full. Restoration comes from values above threshold during probes, which returns the health score to 100 and removes the marker.
