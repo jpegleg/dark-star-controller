@@ -19,7 +19,7 @@ Default thresholds:
 2000 running system processes/tasks
 load average over # cores (this one isn't hard coded and the threshold is assigned to the number of CPUs/vCPUs on the system, so 4 cores will make a load average of 4 the threshold)
 
-## Resource utilizatoin
+## Resource utilization
 
 This program isn't exactly light weight as it samples the system every 1999ms, constantly recalculating and rechecking values. Continued reduction in resource consumption may be made.
 Interestingly the disk calculation is less efficient here than it would be to simply Command call df, so that is a target for optimziation.
