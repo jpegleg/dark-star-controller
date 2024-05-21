@@ -45,3 +45,5 @@ impl PartialEq for Stats {
         self.filesystem == other.filesystem
     }
 }
+
+impl Eq for Stats {}
