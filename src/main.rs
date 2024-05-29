@@ -42,7 +42,6 @@ pub fn dskroot() -> String {
     };
     let reader = BufReader::new(&file);
     let mut stats: Vec<Stats> = Vec::new();
-    let mut max_width = 0;
     for line in reader.lines() {
         match line {
             Ok(line) => {
@@ -60,7 +59,6 @@ pub fn dskroot() -> String {
                 let size = statvfs.blocks() * statvfs.block_size();
                 let avail = statvfs.blocks_available() * statvfs.block_size();
                 let s = Stats::new(fields[FS_SPEC],  size, avail, fields[FS_FILE], fsid);
-                max_width = cmp::max(max_width, s.filesystem.len());
                 stats.push(s);
             }
             Err(_err) => continue,
