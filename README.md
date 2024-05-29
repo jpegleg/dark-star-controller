@@ -206,7 +206,7 @@ The print messages will by default go to the systemd journal files, such as can 
 ## Resource utilization
 
 This program isn't exactly light weight as it samples the system every 1999ms, constantly recalculating and rechecking values. Continued reduction in resource consumption may be made.
-Interestingly the disk calculation is less efficient here than it would be to simply Command call df, so that is a target for optimziation.
+Interestingly the disk calculation is less efficient here than it would be to simply Command call df, so that is a target for optimization.
 
 
 
